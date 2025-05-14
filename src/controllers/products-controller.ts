@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import { AppError } from "@/utils/AppError";
 import {z} from 'zod'
 import { knex } from "@/database/knex";
 
@@ -55,6 +56,15 @@ class ProductsController {
 
             const { name, price } = bodySchema.parse(request.body)
 
+            const product = await knex<ProductRepository>('products')
+                .select()
+                .where({id})
+                .first()
+
+            if(!product) {
+                throw new AppError('Produto não encontrado')
+            }
+
             await knex<ProductRepository>('products').update({
                 name,
                 price,
@@ -63,6 +73,30 @@ class ProductsController {
 
             return response.json()
 
+        } catch (error) {
+            next(error)
+        }
+    }
+
+    async remove(request: Request, response: Response, next: NextFunction) {
+        try {
+            const id = z
+                .string()
+                .transform((value) => Number(value))
+                .refine((value) => !isNaN(value), {message: "ID inválido"})
+                .parse(request.params.id)
+
+            const product = await knex<ProductRepository>('products')
+                .where({id})
+                .first()
+
+            if(!product) {
+                throw new AppError('Produto não encontrado')
+            }
+
+            await knex<ProductRepository>('products').delete().where({id})  
+
+            return response.json()
         } catch (error) {
             next(error)
         }
