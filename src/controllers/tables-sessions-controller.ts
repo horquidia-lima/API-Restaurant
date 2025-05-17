@@ -32,7 +32,16 @@ class TablesSessionsController{
         }
     }
     
+    async index(request: Request, response: Response, next: NextFunction) {
+        try {
+            const sessions = await knex<TablesSessionsRepository>('tables_sessions')
+                .orderBy('opened_at')
 
+            return response.json(sessions)
+        } catch (error) {
+            next(error)
+        }
+    }
 }
 
 export {TablesSessionsController}
