@@ -1,4 +1,5 @@
 import {Request, Response, NextFunction} from 'express'
+import { AppError } from '@/utils/AppError'
 import { knex } from '@/database/knex'
 import {z} from 'zod'
 
@@ -10,6 +11,16 @@ class TablesSessionsController{
             })
           
             const { table_id } = bodySchema.parse(request.body)
+
+            const sessions = await knex<TablesSessionsRepository>('tables_sessions')
+                .where({table_id})
+                .orderBy('opened_at', 'desc')
+                .first()
+
+            if(sessions && !sessions.closed_at) {
+                throw new AppError('Já existe uma sessão aberta para essa mesa')
+            }
+
             await knex<TablesSessionsRepository>('tables_sessions').insert({
                 table_id,
                 opened_at: knex.fn.now(),
