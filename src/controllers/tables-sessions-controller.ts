@@ -51,6 +51,22 @@ class TablesSessionsController{
                 .refine((value) => !isNaN(value), {message: "ID inválido"})
                 .parse(request.params.id)
 
+            const session = await knex<TablesSessionsRepository>('tables_sessions')
+                .where({id})
+                .first()
+
+            if(!session) {
+                throw new AppError('Sessão não encontrada')
+            }
+
+            if(session.closed_at) {
+                throw new AppError('Sessão já fechada')
+            }
+
+            await knex<TablesSessionsRepository>('tables_sessions')
+                .update({closed_at: knex.fn.now()})
+                .where({id})
+
             return response.json()
         } catch (error) {
             next(error)
